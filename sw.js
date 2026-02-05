@@ -1,41 +1,57 @@
-// Offline-first Service Worker for Payesh (iOS compatible)
-const CACHE = "payesh-hse-v1";
-const CORE = [
-  "./payesh-personnel.html",
+// Service Worker for Payesh Personnel PWA
+// Version v3 – force cache refresh
+
+const CACHE_NAME = "payesh-cache-v3";
+
+const FILES_TO_CACHE = [
+  "./",
+  "./index.html",
   "./manifest.webmanifest",
-  "./icon-180.png",
-  "./icon-192.png",
-  "./icon-512.png"
+  "./icon-192-v3.png",
+  "./icon-512-v3.png"
 ];
 
-self.addEventListener("install", (e) => {
-  e.waitUntil(
-    caches.open(CACHE).then((c) => c.addAll(CORE)).then(() => self.skipWaiting())
+// Install: cache essential files
+self.addEventListener("install", (event) => {
+  self.skipWaiting();
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll(FILES_TO_CACHE);
+    })
   );
 });
 
-self.addEventListener("activate", (e) => {
-  e.waitUntil((async () => {
-    const keys = await caches.keys();
-    await Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)));
-    await self.clients.claim();
-  })());
+// Activate: delete old caches
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    caches.keys().then((keyList) => {
+      return Promise.all(
+        keyList.map((key) => {
+          if (key !== CACHE_NAME) {
+            return caches.delete(key);
+          }
+        })
+      );
+    })
+  );
+  self.clients.claim();
 });
 
-self.addEventListener("fetch", (e) => {
-  const req = e.request;
-  const url = new URL(req.url);
-  if (url.origin !== self.location.origin) return;
-  e.respondWith(
-    caches.match(req).then((cached) => {
-      if (cached) return cached;
-      return fetch(req).then((res) => {
-        if (req.method === "GET" && res && res.status === 200) {
-          const copy = res.clone();
-          caches.open(CACHE).then((c) => c.put(req, copy));
-        }
-        return res;
-      }).catch(() => cached || caches.match("./payesh-personnel.html"));
-    })
+// Fetch: network first, fallback to cache
+self.addEventListener("fetch", (event) => {
+  if (event.request.method !== "GET") return;
+
+  event.respondWith(
+    fetch(event.request)
+      .then((response) => {
+        const responseClone = response.clone();
+        caches.open(CACHE_NAME).then((cache) => {
+          cache.put(event.request, responseClone);
+        });
+        return response;
+      })
+      .catch(() => {
+        return caches.match(event.request);
+      })
   );
 });
