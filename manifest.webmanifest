@@ -1,7 +1,8 @@
 {
-  "name": "پایش پرسنل منطقه ۹",
+  "name": "پایش پرسنل ایمنی منطقه ۹",
   "short_name": "پایش منطقه ۹",
-  "start_url": "./payesh-personnel.html",
+  "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#0f172a",
@@ -17,7 +18,6 @@
       "src": "icon-512.png",
       "sizes": "512x512",
       "type": "image/png"
-    },
-
+    }
   ]
 }
